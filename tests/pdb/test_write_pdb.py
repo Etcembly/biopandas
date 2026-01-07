@@ -5,14 +5,15 @@
 # Code Repository: https://github.com/rasbt/biopandas
 
 import sys
+import io
+import os
+import warnings
+from pathlib import Path
 
 if sys.version_info >= (3, 9):
     import importlib.resources as pkg_resources
 else:
     import importlib_resources as pkg_resources
-
-import os
-import warnings
 
 import pandas as pd
 
@@ -175,3 +176,42 @@ def test_to_pdb_stream():
 
     source_pdb = "\n".join(lines_to_check)
     assert stream.read() == source_pdb
+
+
+def test_read_pdb_varied_inputs():
+    """Test reading from Path, StringIO, list, and raw string."""
+    # Read reference content
+    with open(TESTDATA_FILENAME, 'r') as f:
+        pdb_content = f.read()
+    
+    # Reference atom count to verify correctness
+    ppdb_ref = PandasPdb().read_pdb(TESTDATA_FILENAME)
+    ref_len = len(ppdb_ref.df['ATOM'])
+
+    # 1. Test pathlib.Path object
+    ppdb = PandasPdb()
+    ppdb.read_pdb(Path(TESTDATA_FILENAME))
+    assert len(ppdb.df['ATOM']) == ref_len
+    # Verify pdb_text was populated
+    assert ppdb.pdb_text == pdb_content
+
+    # 2. Test StringIO (file-like object)
+    ppdb = PandasPdb()
+    ppdb.read_pdb(io.StringIO(pdb_content))
+    assert len(ppdb.df['ATOM']) == ref_len
+
+    # 3. Test Raw String
+    ppdb = PandasPdb()
+    ppdb.read_pdb(pdb_content)
+    assert len(ppdb.df['ATOM']) == ref_len
+
+    # 4. Test List of lines
+    ppdb = PandasPdb()
+    ppdb.read_pdb(pdb_content.splitlines(True))
+    assert len(ppdb.df['ATOM']) == ref_len
+
+    # 5. Test Open file handle (buffer)
+    with open(TESTDATA_FILENAME, 'r') as f:
+        ppdb = PandasPdb()
+        ppdb.read_pdb(f)
+        assert len(ppdb.df['ATOM']) == ref_len
