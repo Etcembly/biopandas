@@ -1,4 +1,4 @@
-""" Class for working with PDB files"""
+"""Class for working with PDB files"""
 
 # BioPandas
 # Author: Sebastian Raschka <mail@sebastianraschka.com>
@@ -7,15 +7,15 @@
 # Code Repository: https://github.com/rasbt/biopandas
 from __future__ import annotations
 
-import os
 import gzip
+import os
 import sys
 import textwrap
 import warnings
 from copy import deepcopy
 from io import StringIO
-from typing import List, Optional, Union, TextIO, Iterable
 from pathlib import Path
+from typing import Iterable, List, Optional, TextIO, Union
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 from warnings import warn
@@ -80,11 +80,10 @@ class PandasPdb(object):
             "of `PandasPdb.df = ... ` if you are sure that\n"
             "you want to overwrite the `df` attribute."
         )
-        # self._df = value
 
     def read_pdb(self, path: Union[str, Path, TextIO, Iterable[str]]) -> PandasPdb:
         """
-        Universal reader for PDB data. 
+        Universal reader for PDB data.
         Accepts file paths, file handles, raw strings, or lists of lines.
         """
         input_data = path
@@ -94,30 +93,32 @@ class PandasPdb(object):
             input_data = str(input_data)
 
         # 2. Handle File Paths (String that points to a file)
-        if isinstance(input_data, str) and (os.path.exists(input_data) or input_data.endswith(".gz")):
+        if isinstance(input_data, str) and (
+            os.path.exists(input_data) or input_data.endswith(".gz")
+        ):
             self.pdb_path = input_data
             # Handle .gz automatically
-            if input_data.endswith('.gz'):
-                with gzip.open(input_data, 'rt') as f:
+            if input_data.endswith(".gz"):
+                with gzip.open(input_data, "rt") as f:
                     self.pdb_text = f.read()
             else:
-                with open(input_data, 'r') as f:
+                with open(input_data, "r") as f:
                     self.pdb_text = f.read()
 
         # 3. Handle File-like objects (StringIO, open file handles, gzip handles)
-        elif hasattr(input_data, 'read'):
+        elif hasattr(input_data, "read"):
             # Reset cursor if possible (safety check)
-            if hasattr(input_data, 'seek'):
+            if hasattr(input_data, "seek"):
                 try:
                     input_data.seek(0)
                 except Exception:
                     pass
-            
+
             content = input_data.read()
-            
+
             # If we read bytes (e.g. from a binary file handle), decode them
             if isinstance(content, bytes):
-                self.pdb_text = content.decode('utf-8')
+                self.pdb_text = content.decode("utf-8")
             else:
                 self.pdb_text = content
 
@@ -135,7 +136,7 @@ class PandasPdb(object):
         # Construct DF
         self._df = self._construct_df(pdb_lines=self.pdb_text.splitlines(True))
         self.header, self.code = self._parse_header_code()
-        
+
         return self
 
     def read_pdb_from_list(self, pdb_lines):
